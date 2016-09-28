@@ -11,6 +11,8 @@ long long timeit(std::function<void()> func) {
 	return duration;
 }
 
+// TODO
+// Make platform independant
 void files_in_directory(const std::string &dir, std::vector<const std::string> &files) {
 	HANDLE dir_handle;
 	WIN32_FIND_DATA file_data;

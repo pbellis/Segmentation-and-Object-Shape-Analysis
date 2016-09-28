@@ -9,6 +9,8 @@
 
 #include "standard_util.h"
 
+// TODO
+// Make enum class
 const int InvalidData = -1;
 const int AquariumData = 0;
 const int BatData = 1;
@@ -58,15 +60,23 @@ int main(int argc, char** argv) {
 	{
 	case AquariumData:
 		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
+		// TO DO
+		// Create methods to segment aquarium data
 		break;
 	case BatData:
 		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
+		// TO DO
+		// Create methods to segment bat data
 		break;
 	case CellData:
 		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
+		// TO DO
+		// Create methods to segment cell data
 		break;
 	case PianoData:
 		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
+		// TO DO
+		// Create methods to segment piano data
 		break;
 	default:
 		std::cout << mode_argument << " is invalid!" << std::endl;
