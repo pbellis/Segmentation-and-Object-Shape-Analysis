@@ -17,27 +17,20 @@ const int BatData = 1;
 const int CellData = 2;
 const int PianoData = 3;
 
-const std::vector<const std::string> DataSets{
+const std::vector<const std::string> DataSets {
 	"aquarium",
 	"bat",
 	"cell",
 	"piano"
 };
 
-const std::vector<const std::string> ResourceDirectories
-{
-	"rsc/CS585-AquariumImages",
-	"rsc/CS585-BatImages/FalseColor",
-	"rsc/CS585-CellImages/Normalized",
-	"rsc/CS585-PianoImages"
-};
-
 int main(int argc, char** argv) {
 
-	if (argc != 2) exit(1);
+	if (argc != 3) exit(1);
 
-	std::string mode_argument(argv[1]);
-	std::transform(mode_argument.begin(), mode_argument.end(), mode_argument.begin(), ::tolower);
+	std::string data_set(argv[1]);
+	std::string directory(argv[2]);
+	std::transform(data_set.begin(), data_set.end(), data_set.begin(), ::tolower);
 
 	int mode = InvalidData;
 
@@ -46,8 +39,8 @@ int main(int argc, char** argv) {
 
 	int duration = timeit([&]() {
 		for (int i = 0; i < DataSets.size(); ++i) {
-			if (DataSets[i].compare(mode_argument) == 0) {
-				files_in_directory(ResourceDirectories[i], src_files);
+			if (DataSets[i].compare(data_set) == 0) {
+				files_in_directory(directory, src_files);
 				src_images.resize(src_files.size());
 				std::transform(src_files.begin(), src_files.end(), src_images.begin(), [](const std::string &file_name) {return cv::imread(file_name, CV_16SC3); });
 				mode = i;
@@ -79,10 +72,13 @@ int main(int argc, char** argv) {
 		// Create methods to segment piano data
 		break;
 	default:
-		std::cout << mode_argument << " is invalid!" << std::endl;
+		std::cout << data_set << " is invalid!" << std::endl;
 	}
 
-	std::cout << "Push [Enter] to continue" << std::endl;
-	std::cin.clear();
-	std::cin.get();
+	while (true) {
+		for (auto image : src_images) {
+			cv::imshow(data_set, image);
+			cv::waitKey(32);
+		}
+	}
 }
