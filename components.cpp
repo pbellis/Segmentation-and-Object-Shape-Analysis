@@ -42,7 +42,7 @@ void connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, u
 		const uchar *binary_image_ptr = binary_image.ptr<uchar>(r);
 		ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
 
-		for (int c = 0; c < binary_image.cols; ++r) {
+		for (int c = 0; c < binary_image.cols; ++c) {
 			const uchar &binary_image_pixel = binary_image_ptr[c];
 			ushort &labeled_image_pixel = labeled_image_ptr[c];
 
