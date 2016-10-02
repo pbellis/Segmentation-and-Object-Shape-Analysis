@@ -2,8 +2,8 @@
 CS 585 Assignment Three Segmentation and Object Shape Analysis
 
 ## To Do:
-* Implement two segmentation functions
-* Implement connected components function (stack based)
+* ~~Implement two segmentation functions~~
+* ~~Implement connected components function (stack based)~~
 * Implement component reduction function
 * Implement area function
 * Implement orientation function
