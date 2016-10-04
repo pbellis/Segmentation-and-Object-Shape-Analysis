@@ -42,14 +42,14 @@ int main(int argc, char** argv) {
 	std::vector<const cv::Mat> src_images;
 
 	std::vector<cv::Vec3b> label_colors;
-	label_colors.resize(700);
+	label_colors.resize(2000);
 
 	std::mt19937 rng;
 	rng.seed(std::random_device()());
 	std::uniform_int_distribution<std::mt19937::result_type> dist(0, 255);
 
 	label_colors[0] = cv::Vec3b(0, 0, 0);
-	for (ushort l = 1; l < 700; ++l) {
+	for (ushort l = 1; l < 2000; ++l) {
 		label_colors[l] = cv::Vec3b(dist(rng), dist(rng), dist(rng));
 	}
 
@@ -66,54 +66,30 @@ int main(int argc, char** argv) {
 		}
 	});
 
-	switch (mode)
-	{
-	case AquariumData:
-		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
-		// TO DO
-		// Create methods to segment aquarium data
-		break;
-	case BatData:
-		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
-		
+	for (auto src : src_images) {
 
+		std::cout << "frame start" << std::endl;
 
-		for (auto src : src_images) {
+		auto frame_length = timeit([&]() {
+			cv::Mat binary_image(src.size(), CV_8UC1);
+			binaryThreshold(src, binary_image, 125, 1, 25);
 
-			std::cout << "frame start" << std::endl;
+			cv::Mat labeled_image = cv::Mat::zeros(src.size(), CV_16UC1);
+			ushort max_label;
 
-			auto frame_length = timeit([&]() {
-				cv::Mat binary_image(src.size(), CV_8UC1);
-				cv::Mat segmented_image(src.size(), CV_8UC3);
-				
-				cv::Mat labled_image = cv::Mat::zeros(src.size(), CV_16UC1);
-				ushort max_label;
+			iterative_connected_components(binary_image, labeled_image, max_label);
+			
+			cv::Mat segmented_image(src.size(), CV_8UC3);
+			colorize_components(labeled_image, max_label, label_colors, segmented_image);
 
-				binaryThreshold(src, binary_image, 175, 1, 50);
-				connected_components(binary_image, labled_image, max_label);
-				colorize_components(labled_image, max_label, label_colors, segmented_image);
+			std::cout << "\tfound " << max_label << " components" << std::endl;
 
-				std::cout << "\tfound " << max_label << " components" << std::endl;
+			cv::imshow("segmented", segmented_image);
 
-				cv::imshow("segmented", segmented_image);
-				cv::waitKey(1);
-			});
+			cv::waitKey(1);
+		});
 
-			std::cout << "\tframe took " << frame_length << " ms" << std::endl;
-		}
+		std::cout << "\tframe took " << frame_length << " ms" << std::endl;
 
-		break;
-	case CellData:
-		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
-		// TO DO
-		// Create methods to segment cell data
-		break;
-	case PianoData:
-		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
-		// TO DO
-		// Create methods to segment piano data
-		break;
-	default:
-		std::cout << data_set << " is invalid!" << std::endl;
 	}
 }

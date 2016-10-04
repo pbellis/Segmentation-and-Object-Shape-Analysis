@@ -11,6 +11,8 @@ void connected_component(const cv::Mat &binary_image, const cv::Point2i &pixel, 
 		cv::Point2i(-1, 0),
 		cv::Point2i(0, 1),
 		cv::Point2i(0, -1),
+		cv::Point2i(1, 1),
+		cv::Point(-1, -1)
 	};
 
 	const cv::Rect2i bounds(cv::Point2i(0, 0), binary_image.size());
@@ -55,8 +57,68 @@ void connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, u
 	max_label = label;
 }
 
-void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, ushort &max_label) {
+void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, ushort &max_label, const ushort &max_label_guess) {
+	ushort label = 1;
 
+	std::vector<ushort> parents;
+	parents.reserve(max_label_guess);
+	parents.push_back(0);
+
+	for (int r = 1; r < binary_image.rows; ++r) {
+		const uchar *binary_image_ptr = binary_image.ptr<uchar>(r);
+		ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+		ushort *south_labeled_image_ptr = labeled_image.ptr<ushort>(r - 1);
+
+		for (int c = 1; c < binary_image.cols; ++c) {
+			const uchar &binary_image_pixel = binary_image_ptr[c];
+			ushort &labeled_image_pixel = labeled_image_ptr[c];
+			ushort &labeled_image_pixel_west_neighbor = labeled_image_ptr[c - 1];
+			ushort &labeled_image_pixel_south_neighbor = south_labeled_image_ptr[c];
+
+			if (binary_image_pixel != 0) {
+				if (labeled_image_pixel_west_neighbor == labeled_image_pixel_south_neighbor){
+					labeled_image_pixel = (labeled_image_pixel_west_neighbor == 0) ? label++ : labeled_image_pixel_west_neighbor;
+					parents.push_back(0);
+				}
+				else if (labeled_image_pixel_west_neighbor == 0) {
+					labeled_image_pixel = labeled_image_pixel_south_neighbor;
+				}
+				else if (labeled_image_pixel_south_neighbor == 0) {
+					labeled_image_pixel = labeled_image_pixel_west_neighbor;
+				}
+				else if (labeled_image_pixel_west_neighbor < labeled_image_pixel_south_neighbor) {
+					labeled_image_pixel = labeled_image_pixel_west_neighbor;
+					parents[labeled_image_pixel_south_neighbor] = labeled_image_pixel;
+				}
+				else if (labeled_image_pixel_south_neighbor < labeled_image_pixel_west_neighbor) {
+					labeled_image_pixel = labeled_image_pixel_south_neighbor;
+					parents[labeled_image_pixel_west_neighbor] = labeled_image_pixel;
+				}
+			}
+		}
+	}
+
+	for (int r = 1; r < labeled_image.rows; ++r) {
+		ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+		for (int c = 1; c < labeled_image.cols; ++c) {
+			ushort &labeled_image_pixel = labeled_image_ptr[c];
+			while (parents[labeled_image_pixel] != 0) {
+				labeled_image_pixel = parents[labeled_image_pixel];
+			}
+		}
+	}
+
+	label = 0;
+	for (int r = 1; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+		for (int c = 1; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			label = (label < labeled_image_pixel) ? labeled_image_pixel : label;
+		}
+	}
+
+
+	max_label = label;
 }
 
 void colorize_components(const cv::Mat &labeled_image, const ushort &max_label, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image) {
