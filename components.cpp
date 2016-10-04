@@ -112,7 +112,6 @@ void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labele
 		}
 	}
 
-	label_vector.clear();
 	for (int p = 0; p < parents.size(); ++p) {
 		if (parents[p] == 0) {
 			label_vector.push_back(p);
