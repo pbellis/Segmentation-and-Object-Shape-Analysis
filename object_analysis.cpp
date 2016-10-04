@@ -1,4 +1,5 @@
 #include "object_analysis.h"
+#include <cmath>
 
 void object_area(const cv::Mat &src, int& area){
 	for (int r = 0; r < src.rows; ++r) {
@@ -93,4 +94,28 @@ void object_bounds(const cv::Mat &src, cv::Rect2i &bounds) {
 	bounds.width = max_pt.x - max_pt.x;
 	bounds.height = max_pt.y - max_pt.y;
 
+}
+
+
+
+void calculate_orientation(const int &a, const int &b, const int &c, float& alpha, int& h){
+	h = sqrt((a - c)*(a - c) + b*b);
+	alpha = atanf(b / (a - c))/2.0f;
+}
+
+//calculate the centroid coordinates the object with given label
+void calculate_centroid(cv::Mat& src, ushort lable, cv::Rect2i &bounds, int &xbar, int &ybar){
+	int xsum = 0,
+		ysum = 0,
+		number = 0;
+	for (int i = bounds.y; i < bounds.y + bounds.height; i++){
+		for (int j = bounds.x; j < bounds.x + bounds.width; j++){
+			if (src.at<ushort>(j, i) == lable);
+			xsum = xsum + j;
+			ysum = ysum + i;
+			number++;
+		}
+	}
+	xbar = xsum / number;
+	ybar = ysum / number;
 }
