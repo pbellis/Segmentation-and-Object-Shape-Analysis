@@ -8,3 +8,4 @@
 
 
 void dilation(const cv::Mat& src, cv::Mat &res, int size);
+void erosion(const cv::Mat& src, cv::Mat &res, int size);
