@@ -126,3 +126,29 @@ void calculate_circularity(const int &a, const int &b, const int &c, const int &
 	emax = 0.5f * ((a + c) + (a - c) * (a - c) * h_div + b * (b * h_div));
 	circularity = emin / emax;
 }
+
+void ratioAreaToPerimeter(int& area, int& perimeter, float& ratio) {
+	ratio = static_cast<float>(area) / static_cast<float>(perimeter);
+}
+
+void compactness(int& area, int& perimeter, float& compact) {
+	compact = (perimeter*perimeter) / static_cast<float>(area);
+}
+
+//src, label as ushort, and bounding box of object
+void preOrientation(const cv::Mat& src, const ushort& label, const cv::Rect2i& bounds, const cv::Point2i centroid, int& a, int& b, int& c) {
+
+	for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
+		const ushort *src_image_ptr = src.ptr<ushort>(i);
+
+		for (int j = bounds.x; j < bounds.y + bounds.width; j++) {
+			const ushort &src_image_pixel = src_image_ptr[j];
+			const int Bij = (src_image_pixel == label) ? 1 : 0;
+			a += Bij * (j - centroid.x) * (j - centroid.x);
+			b += Bij * 2 * (j - centroid.x) * (i - centroid.y);
+			c += Bij * (i - centroid.y) * (i - centroid.y);
+		}
+	}
+
+
+}
