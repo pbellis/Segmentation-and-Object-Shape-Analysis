@@ -1,5 +1,15 @@
 #include "morphology.h"
 
+<<<<<<< HEAD
+//dilation using opencv. parameter: input, output, size of the mask, type of mask(Morph_Rect, Morph_cross, Morph_ellipse)
+void dilation(const cv::Mat& src, cv::Mat &res, int size, cv::MorphShapes type){
+	cv::Mat element = cv::getStructuringElement(type, cv::Size(2 * size + 1, 2 * size + 1), cv::Point(size, size));
+	cv::dilate(src, res, element);
+}
+//erosion using opencv. parameter: input, output, size of the mask, type of mask(Morph_Rect, Morph_cross, Morph_ellipse)
+void erosion(const cv::Mat& src, cv::Mat &res, int size, cv::MorphShapes type){
+	cv::Mat element = cv::getStructuringElement(type, cv::Size(2 * size + 1, 2 * size + 1), cv::Point(size, size));
+=======
 void dilation(const cv::Mat& src, cv::Mat &res, int size){
 	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2 * size + 1, 2 * size + 1), cv::Point(size, size));
 	cv::dilate(src, res, element);
@@ -7,5 +17,6 @@ void dilation(const cv::Mat& src, cv::Mat &res, int size){
 
 void erosion(const cv::Mat& src, cv::Mat &res, int size){
 	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2 * size + 1, 2 * size + 1), cv::Point(size, size));
+>>>>>>> origin/master
 	cv::erode(src, res, element);
 }
