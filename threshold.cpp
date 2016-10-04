@@ -176,17 +176,71 @@ int neighborhood(const cv::Mat& src, int neighborType, int i, int j, int flag) {
 
 	mean = mean - 3;
 	if (intensity < mean) {
-		return 0;
-	}
-	else {
 		return 255;
 	}
+	else {
+		return 0;
+	}
 }
-
-
 
 //Percentile Threshold
 void percentileThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int percentage) {
 	binaryThreshold(src, dst, threshold, 1, percentage);
 }
 
+void difference(const cv::Mat &src1, const cv::Mat &src2, cv::Mat &dst) {
+	for (size_t r = 0; r < src1.rows; ++r) {
+		const uchar *src1_row = src1.ptr<uchar>(r);
+		const uchar *src2_row = src2.ptr<uchar>(r);
+		uchar *dst_row = dst.ptr<uchar>(r);
+
+		for (size_t c = 0; c < src1.cols; ++c) {
+			const uchar &src1_pixel = src1_row[c];
+			const uchar &src2_pixel = src2_row[c];
+			uchar &dst_pixel = dst_row[c];
+
+			dst_pixel = abs(src1_pixel - src2_pixel);
+		}
+	}
+}
+
+void energy(const cv::Mat &src, cv::Mat &dst, int buffer) {
+
+	const int low_value = 256 - buffer;
+
+	for (size_t r = 0; r < src.rows; ++r) {
+		const uchar *src_row = src.ptr<uchar>(r);
+		uchar *dst_row = dst.ptr<uchar>(r);
+
+		for (size_t c = 0; c < src.cols; ++c) {
+			const uchar &src_pixel = src_row[c];
+			uchar &dst_pixel = dst_row[c];
+
+			if (src_pixel > 0) {
+				dst_pixel = 255;
+			}
+			else if (dst_pixel > low_value) {
+				dst_pixel--;
+			}
+			else if (dst_pixel == low_value) {
+				dst_pixel = 0;
+			}
+		}
+	}
+}
+
+void binary_and(const cv::Mat &src1, const cv::Mat &src2, cv::Mat &dst) {
+	for (size_t r = 0; r < src1.rows; ++r) {
+		const uchar *src1_row = src1.ptr<uchar>(r);
+		const uchar *src2_row = src2.ptr<uchar>(r);
+		uchar *dst_row = dst.ptr<uchar>(r);
+
+		for (size_t c = 0; c < src1.cols; ++c) {
+			const uchar &src1_pixel = src1_row[c];
+			const uchar &src2_pixel = src2_row[c];
+			uchar &dst_pixel = dst_row[c];
+
+			dst_pixel = ((src1_pixel > 0) & (src2_pixel > 0)) ? 255 : 0;
+		}
+	}
+}

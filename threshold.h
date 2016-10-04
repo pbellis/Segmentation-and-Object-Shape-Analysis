@@ -44,3 +44,12 @@ Creates a thresholded image from a grayscale image.
 @param percentage: Used for percentile threshold; tells what percent of image the foreground object occupies
 */
 void percentileThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int percentage);
+
+// TODO
+// COMMENT
+
+void difference(const cv::Mat &src1, const cv::Mat &src2, cv::Mat &dst);
+
+void energy(const cv::Mat &src, cv::Mat &dst, int buffer);
+
+void binary_and(const cv::Mat &src1, const cv::Mat &src2, cv::Mat &dst);
