@@ -13,6 +13,7 @@
 #include "threshold.h"
 #include "components.h"
 #include "object_analysis.h"
+#include "morphology.h"
 
 // TODO
 // Make enum class
@@ -102,10 +103,13 @@ int main(int argc, char** argv) {
 
 				difference(grey_image, previous_grey_image, difference_image);
 				binaryThreshold(difference_image, binary_difference_image, 5, 0, 0);
-				energy(binary_difference_image, energy_image, 64);
+				energy(binary_difference_image, energy_image, 8);
 
 				binaryThreshold(src, binary_image, 125, 1, 75);
 				//adaptiveThreshold(src, binary_image);
+
+				dilation(energy_image, energy_image, 1);
+				dilation(binary_image, binary_image, 1);
 
 				binary_and(energy_image, binary_image, search_image);
 
