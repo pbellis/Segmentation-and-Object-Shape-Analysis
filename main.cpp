@@ -108,8 +108,8 @@ int main(int argc, char** argv) {
 				binaryThreshold(src, binary_image, 125, 1, 75);
 				//adaptiveThreshold(src, binary_image);
 
-				dilation(energy_image, energy_image, 1);
-				dilation(binary_image, binary_image, 1);
+				dilation(energy_image, energy_image, 1, cv::MORPH_RECT);
+				dilation(binary_image, binary_image, 1, cv::MORPH_RECT);
 
 				binary_and(energy_image, binary_image, search_image);
 

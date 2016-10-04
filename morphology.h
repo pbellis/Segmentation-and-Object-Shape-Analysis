@@ -7,5 +7,5 @@
 
 
 
-void dilation(const cv::Mat& src, cv::Mat &res, int size);
-void erosion(const cv::Mat& src, cv::Mat &res, int size);
+void dilation(const cv::Mat& src, cv::Mat &res, int size, cv::MorphShapes type);
+void erosion(const cv::Mat& src, cv::Mat &res, int size, cv::MorphShapes type);
