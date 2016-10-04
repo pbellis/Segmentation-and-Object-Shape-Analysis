@@ -94,3 +94,10 @@ void object_bounds(const cv::Mat &src, cv::Rect2i &bounds) {
 	bounds.height = max_pt.y - max_pt.y;
 
 }
+
+void calculate_circularity(const int &a, const int &b, const int &c, const int &h, float &emin, float &emax, float &circularity) {
+	const float h_div = static_cast<float>(h);
+	emin = 0.5f * ((a + c) - (a - c) * (a - c) * h_div - b * (b * h_div));
+	emax = 0.5f * ((a + c) + (a - c) * (a - c) * h_div + b * (b * h_div));
+	circularity = emin / emax;
+}
