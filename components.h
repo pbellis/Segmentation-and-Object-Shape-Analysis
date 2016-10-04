@@ -5,6 +5,10 @@ void connected_component(const cv::Mat &binary_image, const cv::Point2i &pixel, 
 
 void connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, ushort &max_label);
 
+void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, ushort &max_label, const ushort &max_label_guess = 1);
+
+void colorize_components(const cv::Mat &labeled_image, const ushort &max_label, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image);
+
 void extract_component(const cv::Mat &labeled_image, const ushort &label, cv::Mat &component);
 
 void extract_components(const cv::Mat &labled_image, const ushort &max_label, std::vector<cv::Mat> &component_vector);
