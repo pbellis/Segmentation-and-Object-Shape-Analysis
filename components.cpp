@@ -1,6 +1,8 @@
 #include "components.h"
 
 #include <stack>
+#include <vector>
+#include <algorithm>
 
 void connected_component(const cv::Mat &binary_image, const cv::Point2i &pixel, const ushort &label, cv::Mat &labeled_image) {
 	std::stack<cv::Point2i> pixels;
@@ -11,8 +13,6 @@ void connected_component(const cv::Mat &binary_image, const cv::Point2i &pixel, 
 		cv::Point2i(-1, 0),
 		cv::Point2i(0, 1),
 		cv::Point2i(0, -1),
-		cv::Point2i(1, 1),
-		cv::Point(-1, -1)
 	};
 
 	const cv::Rect2i bounds(cv::Point2i(0, 0), binary_image.size());
@@ -57,11 +57,10 @@ void connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, u
 	max_label = label;
 }
 
-void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, ushort &max_label, const ushort &max_label_guess) {
+void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, std::vector<ushort> &label_vector) {
 	ushort label = 1;
 
 	std::vector<ushort> parents;
-	parents.reserve(max_label_guess);
 	parents.push_back(0);
 
 	for (int r = 1; r < binary_image.rows; ++r) {
@@ -77,8 +76,13 @@ void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labele
 
 			if (binary_image_pixel != 0) {
 				if (labeled_image_pixel_west_neighbor == labeled_image_pixel_south_neighbor){
-					labeled_image_pixel = (labeled_image_pixel_west_neighbor == 0) ? label++ : labeled_image_pixel_west_neighbor;
-					parents.push_back(0);
+					if (labeled_image_pixel_west_neighbor == 0) {
+						labeled_image_pixel = label++;
+						parents.push_back(0);
+					}
+					else {
+						labeled_image_pixel = labeled_image_pixel_west_neighbor;
+					}
 				}
 				else if (labeled_image_pixel_west_neighbor == 0) {
 					labeled_image_pixel = labeled_image_pixel_south_neighbor;
@@ -108,20 +112,34 @@ void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labele
 		}
 	}
 
-	label = 0;
-	for (int r = 1; r < labeled_image.rows; ++r) {
-		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
-		for (int c = 1; c < labeled_image.cols; ++c) {
-			const ushort &labeled_image_pixel = labeled_image_ptr[c];
-			label = (label < labeled_image_pixel) ? labeled_image_pixel : label;
+	label_vector.clear();
+	for (int p = 0; p < parents.size(); ++p) {
+		if (parents[p] == 0) {
+			label_vector.push_back(p);
 		}
 	}
-
-
-	max_label = label;
 }
 
-void colorize_components(const cv::Mat &labeled_image, const ushort &max_label, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image) {
+void condense_labels(const std::vector<ushort> &label_vector, const cv::Mat &labeled_image, cv::Mat &relabeled_image) {
+	std::vector<ushort> relabel_vector;
+	relabel_vector.resize(label_vector.back() + 1);
+
+	for (ushort l = 0; l < label_vector.size(); ++l) {
+		relabel_vector[label_vector[l]] = l;
+	}
+	
+	for (int r = 1; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+		ushort *relabeled_image_ptr = relabeled_image.ptr<ushort>(r);
+		for (int c = 1; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			ushort &relabeled_image_pixel = relabeled_image_ptr[c];
+			relabeled_image_pixel = relabel_vector[labeled_image_pixel];
+		}
+	}
+}
+
+void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image) {
 	for (int r = 0; r < labeled_image.rows; ++r) {
 		const ushort *labled_image_ptr = labeled_image.ptr<ushort>(r);
 		cv::Vec3b *segmented_image_ptr = segmented_image.ptr<cv::Vec3b>(r);
@@ -129,7 +147,9 @@ void colorize_components(const cv::Mat &labeled_image, const ushort &max_label, 
 		for (int c = 0; c < labeled_image.cols; ++c) {
 			const ushort &labled_image_pixel = labled_image_ptr[c];
 			cv::Vec3b &segmented_image_pixel = segmented_image_ptr[c];
-			segmented_image_pixel = label_colors[labled_image_pixel];
+			if (labled_image_pixel > 0) {
+				segmented_image_pixel = label_colors[labled_image_pixel];
+			}
 		}
 	}
 }
@@ -175,7 +195,7 @@ void combine_components(const std::vector<cv::Mat> &component_vector, cv::Mat &l
 	}
 }
 
-void components_filter(std::vector<cv::Mat> &component_vector, std::vector<cv::Mat> &filtered_component_vector, std::function<bool(const cv::Mat&)> filter) {
+void components_filter(std::vector<cv::Mat> &component_vector, std::function<bool(const cv::Mat&)> filter, std::vector<cv::Mat> &filtered_component_vector) {
 	for (const cv::Mat &component : component_vector) {
 		if (filter(component)) {
 			filtered_component_vector.push_back(component);
