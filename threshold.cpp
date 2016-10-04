@@ -1,13 +1,4 @@
-#include "opencv2/core/core.hpp"
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <functional>
 #include "threshold.h"
-
 
 //Binary threshold
 void binaryThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int method, int percentage) {
@@ -199,15 +190,3 @@ void percentileThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int pe
 	binaryThreshold(src, dst, threshold, 1, percentage);
 }
 
-
-//Timing function
-long long timeit(std::function<void()> func) {
-	auto begin = std::chrono::high_resolution_clock::now();
-
-	func();
-
-	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-
-	return duration;
-}

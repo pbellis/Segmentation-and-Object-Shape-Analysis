@@ -1,11 +1,4 @@
-#include <functional>
 #include <opencv2/core/core.hpp>
-#include <functional>
-#include <chrono>
-#include <string>
-#include <vector>
-#include <Windows.h>
-
 
 
 /*Global (Binary) Threshold
@@ -51,6 +44,3 @@ Creates a thresholded image from a grayscale image.
 @param percentage: Used for percentile threshold; tells what percent of image the foreground object occupies
 */
 void percentileThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int percentage);
-
-// Times anything :)
-long long timeit(std::function<void()> func);

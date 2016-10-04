@@ -1,13 +1,18 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <random>
 
 #include "standard_util.h"
+#include "threshold.h"
+#include "components.h"
+#include "object_analysis.h"
 
 // TODO
 // Make enum class
@@ -36,12 +41,25 @@ int main(int argc, char** argv) {
 	std::vector<cv::String> src_files;
 	std::vector<const cv::Mat> src_images;
 
+	std::vector<cv::Vec3b> label_colors;
+	label_colors.resize(700);
+
+	std::mt19937 rng;
+	rng.seed(std::random_device()());
+	std::uniform_int_distribution<std::mt19937::result_type> dist(0, 255);
+
+	label_colors[0] = cv::Vec3b(0, 0, 0);
+	for (ushort l = 1; l < 700; ++l) {
+		label_colors[l] = cv::Vec3b(dist(rng), dist(rng), dist(rng));
+	}
+
+
 	int duration = timeit([&]() {
 		for (int i = 0; i < DataSets.size(); ++i) {
 			if (DataSets[i].compare(data_set) == 0) {
 				cv::glob(directory, src_files);
 				src_images.resize(src_files.size());
-				std::transform(src_files.begin(), src_files.end(), src_images.begin(), [](cv::String &file_name) {return cv::imread(file_name, CV_16SC3); });
+				std::transform(src_files.begin(), src_files.end(), src_images.begin(), [](cv::String &file_name) {return cv::imread(file_name, CV_8UC1); });
 				mode = i;
 				break;
 			}
@@ -57,8 +75,33 @@ int main(int argc, char** argv) {
 		break;
 	case BatData:
 		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
-		// TO DO
-		// Create methods to segment bat data
+		
+
+
+		for (auto src : src_images) {
+
+			std::cout << "frame start" << std::endl;
+
+			auto frame_length = timeit([&]() {
+				cv::Mat binary_image(src.size(), CV_8UC1);
+				cv::Mat segmented_image(src.size(), CV_8UC3);
+				
+				cv::Mat labled_image = cv::Mat::zeros(src.size(), CV_16UC1);
+				ushort max_label;
+
+				binaryThreshold(src, binary_image, 175, 1, 50);
+				connected_components(binary_image, labled_image, max_label);
+				colorize_components(labled_image, max_label, label_colors, segmented_image);
+
+				std::cout << "\tfound " << max_label << " components" << std::endl;
+
+				cv::imshow("segmented", segmented_image);
+				cv::waitKey(1);
+			});
+
+			std::cout << "\tframe took " << frame_length << " ms" << std::endl;
+		}
+
 		break;
 	case CellData:
 		std::cout << "Loaded " << src_files.size() << " files from " << DataSets[mode] << " dataset in " << duration << " milliseconds" << std::endl;
@@ -72,12 +115,5 @@ int main(int argc, char** argv) {
 		break;
 	default:
 		std::cout << data_set << " is invalid!" << std::endl;
-	}
-
-	while (true) {
-		for (auto image : src_images) {
-			cv::imshow(data_set, image);
-			cv::waitKey(32);
-		}
 	}
 }

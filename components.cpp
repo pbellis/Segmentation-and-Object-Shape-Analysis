@@ -6,23 +6,23 @@ void connected_component(const cv::Mat &binary_image, const cv::Point2i &pixel, 
 	std::stack<cv::Point2i> pixels;
 	pixels.push(pixel);
 
+	const cv::Point2i directions[] {
+		cv::Point2i(1, 0),
+		cv::Point2i(-1, 0),
+		cv::Point2i(0, 1),
+		cv::Point2i(0, -1),
+	};
+
+	const cv::Rect2i bounds(cv::Point2i(0, 0), binary_image.size());
+	
 	while (!pixels.empty()) {
 		const cv::Point2i &current_pixel = pixels.top();
 		pixels.pop();
 
-		const cv::Point2i neighbors[] {
-			cv::Point2i(current_pixel) + cv::Point2i(1, 0),
-			cv::Point2i(current_pixel) + cv::Point2i(-1, 0),
-			cv::Point2i(current_pixel) + cv::Point2i(0, 1),
-			cv::Point2i(current_pixel) + cv::Point2i(0, -1),
-		};
-
-		for (const cv::Point2i &neighbor_pixel : neighbors) {
-			if (neighbor_pixel.x > -1 && 
-				neighbor_pixel.x < binary_image.cols &&
-				neighbor_pixel.y > -1 &&
-				neighbor_pixel.y < binary_image.rows) {
-
+		for (const cv::Point2i &direction : directions) {
+			const cv::Point2i neighbor_pixel = current_pixel + direction;
+			
+			if (bounds.contains(neighbor_pixel)) {
 				if (binary_image.at<uchar>(neighbor_pixel) > 0 && 
 					labeled_image.at<ushort>(neighbor_pixel) == 0) {
 
@@ -53,6 +53,23 @@ void connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, u
 	}
 
 	max_label = label;
+}
+
+void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, ushort &max_label) {
+
+}
+
+void colorize_components(const cv::Mat &labeled_image, const ushort &max_label, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image) {
+	for (int r = 0; r < labeled_image.rows; ++r) {
+		const ushort *labled_image_ptr = labeled_image.ptr<ushort>(r);
+		cv::Vec3b *segmented_image_ptr = segmented_image.ptr<cv::Vec3b>(r);
+		
+		for (int c = 0; c < labeled_image.cols; ++c) {
+			const ushort &labled_image_pixel = labled_image_ptr[c];
+			cv::Vec3b &segmented_image_pixel = segmented_image_ptr[c];
+			segmented_image_pixel = label_colors[labled_image_pixel];
+		}
+	}
 }
 
 void extract_component(const cv::Mat &labeled_image, const ushort &label, cv::Mat &component) {
