@@ -42,14 +42,14 @@ int main(int argc, char** argv) {
 	std::vector<const cv::Mat> src_images;
 
 	std::vector<cv::Vec3b> label_colors;
-	label_colors.resize(2000);
+	label_colors.resize(6000);
 
 	std::mt19937 rng;
 	rng.seed(std::random_device()());
 	std::uniform_int_distribution<std::mt19937::result_type> dist(0, 255);
 
 	label_colors[0] = cv::Vec3b(0, 0, 0);
-	for (ushort l = 1; l < 2000; ++l) {
+	for (ushort l = 1; l < label_colors.size(); ++l) {
 		label_colors[l] = cv::Vec3b(dist(rng), dist(rng), dist(rng));
 	}
 
@@ -66,30 +66,33 @@ int main(int argc, char** argv) {
 		}
 	});
 
-	for (auto src : src_images) {
+	while (true) {
 
-		std::cout << "frame start" << std::endl;
+		for (auto src : src_images) {
 
-		auto frame_length = timeit([&]() {
-			cv::Mat binary_image(src.size(), CV_8UC1);
-			binaryThreshold(src, binary_image, 125, 1, 25);
+			std::cout << "frame start" << std::endl;
 
-			cv::Mat labeled_image = cv::Mat::zeros(src.size(), CV_16UC1);
-			ushort max_label;
+			auto frame_length = timeit([&]() {
 
-			iterative_connected_components(binary_image, labeled_image, max_label);
-			
-			cv::Mat segmented_image(src.size(), CV_8UC3);
-			colorize_components(labeled_image, max_label, label_colors, segmented_image);
+				cv::Mat binary_image(src.size(), CV_8UC1);
+				binaryThreshold(src, binary_image, 125, 1, 25);
 
-			std::cout << "\tfound " << max_label << " components" << std::endl;
+				cv::Mat labeled_image = cv::Mat::zeros(src.size(), CV_16UC1);
+				std::vector<ushort> label_vector;
 
-			cv::imshow("segmented", segmented_image);
+				iterative_connected_components(binary_image, labeled_image, label_vector);
+				condense_labels(label_vector, labeled_image, labeled_image);
 
-			cv::waitKey(1);
-		});
+				cv::Mat segmented_image = cv::Mat::zeros(src.size(), CV_8UC3);
+				colorize_components(labeled_image, label_colors, segmented_image);
 
-		std::cout << "\tframe took " << frame_length << " ms" << std::endl;
+				std::cout << "\tfound " << label_vector.size() << " components" << std::endl;
 
+				cv::imshow("segmented", segmented_image);
+
+				cv::waitKey(1);
+			});
+			std::cout << "\tframe took " << frame_length << " ms" << std::endl;
+		}
 	}
 }
