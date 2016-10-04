@@ -14,7 +14,7 @@ const std::array<std::array<unsigned, GBT_7::MaxPower>, GBT_7::MaxPower> GBT_7::
 	{{ 6,  0, 43,  2, 31,  4, 47}}
 }};
 
-const std::array<unsigned, 7> ComplimentTable {{
+const std::array<unsigned, 7> GBT_7::ComplimentTable {{
 		0, 6, 5, 4, 3, 2, 1
 }};
 
