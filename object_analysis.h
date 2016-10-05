@@ -1,20 +1,22 @@
 #include <opencv2/core/core.hpp>
 
-void object_area(const cv::Mat &src, int& area);
+// TODO
+// COMMENT
 
-void object_perimeter(const cv::Mat &src, int& perimeter);
+void calculate_bounds(const cv::Mat &labeled_image, const ushort &labels, std::vector<cv::Rect2i> &bounds_vector);
 
-void object_bounds(const cv::Mat &src, cv::Rect2i &bounds);
+void calcualte_areas(const cv::Mat &labeled_image, const ushort &labels, std::vector<int> &area_vector);
 
-void calculate_orientation(const int &a, const int &b, const int &c, float& alpha, int& h);
+void calculate_perimeters(const cv::Mat &labeled_image, const ushort &labels, std::vector<int> &perimeter_vector);
 
-void calculate_centroid(cv::Mat& src, ushort lable, cv::Rect2i &bounds, int &x, int &y);
+void calculate_area_perimeter_ratios(const std::vector<int> &area_vector, const std::vector<int> &perimeter_vector, std::vector<float> &ratio_vector);
 
-void calculate_circularity(const int &a, const int &b, const int &c, const int &h, float &emin, float &emax, float &circularity);
+void calculate_compactness(const std::vector<int> &area_vector, const std::vector<int> &perimeter_vector, std::vector<float> &compactness_vector);
 
-void ratioAreaToPerimeter(int& area, int& perimeter, int& ratio);
+void calculate_centroids(const cv::Mat& labeled_image, const ushort &labels, std::vector<cv::Point2i> centroid_vector);
 
-void compactness(int& area, int& perimeter, float& compact);
+void precalculate_orientations(const cv::Mat& labeled_image, const ushort &labels, const std::vector<cv::Point2i> centroid_vector, std::vector<int> &a_vector, std::vector<int> &b_vector, std::vector<int> &c_vector);
 
-void preOrientation(const cv::Mat& src, const ushort& label, const cv::Rect2i& bounds, const cv::Point2i centroid, int& a, int& b, int& c);
+void calculate_orientations(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, std::vector<float> &alpha_vector, std::vector<int> &h_vector);
 
+void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &circularity_vector);

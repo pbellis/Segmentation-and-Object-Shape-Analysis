@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 	std::vector<const cv::Mat> src_images;
 
 	std::vector<cv::Vec3b> label_colors;
-	label_colors.resize(6000);
+	label_colors.resize(11000);
 
 	std::mt19937 rng;
 	rng.seed(std::random_device()());
@@ -71,25 +71,21 @@ int main(int argc, char** argv) {
 
 	cv::Size2i size = src_images[0].size();
 	cv::Mat grey_image(size, CV_8UC1);
-	cv::Mat previous_grey_image(size, CV_8UC1);
-
-	cv::Mat difference_image(size, CV_8UC1);
-	cv::Mat binary_difference_image(size, CV_8UC1);
-	cv::Mat energy_image(size, CV_8UC1);
 
 	cv::Mat binary_image(size, CV_8UC1);
-	cv::Mat search_image(size, CV_8UC1);
 	cv::Mat labeled_image(size, CV_16UC1);
 	cv::Mat segmented_image(size, CV_8UC3);
 	
 	std::vector<ushort> label_vector;
+	std::vector<ushort> relabel_vector;
 
+	ushort labels;
+	std::vector<cv::Rect2i> bounds_vector;
+	std::vector<int> area_vector;
 
 	while (true) {
 
-		energy_image = 0;
-
-		for (int f = 1; f < src_images.size(); ++f) {
+		for (int f = 0; f < src_images.size(); ++f) {
 
 			const cv::Mat &src = src_images[f];
 			const cv::Mat &previous_src = src_images[f - 1];
@@ -99,28 +95,31 @@ int main(int argc, char** argv) {
 			auto frame_length = timeit([&]() {
 
 				rgb2greyscale(src, grey_image);
-				rgb2greyscale(previous_src, previous_grey_image);
-
-				difference(grey_image, previous_grey_image, difference_image);
-				binaryThreshold(difference_image, binary_difference_image, 5, 0, 0);
-				energy(binary_difference_image, energy_image, 8);
 
 				binaryThreshold(src, binary_image, 125, 1, 75);
 				//adaptiveThreshold(src, binary_image);
 
-				dilation(energy_image, energy_image, 1, cv::MORPH_RECT);
-				dilation(binary_image, binary_image, 1, cv::MORPH_RECT);
+				dilation(binary_image, binary_image, 2, cv::MORPH_ELLIPSE);
 
-				binary_and(energy_image, binary_image, search_image);
-
-				labeled_image = 0;
 				segmented_image = 0;
-				label_vector.clear();
 
-				iterative_connected_components(search_image, labeled_image, label_vector);
+				iterative_connected_components(binary_image, labeled_image, label_vector);
+				labels = label_vector.size();
+
 				condense_labels(label_vector, labeled_image, labeled_image);
 
+				calculate_bounds(labeled_image, labels, bounds_vector);
+				calcualte_areas(labeled_image, labels, area_vector);
+
+				filter_labels(labeled_image, labels, labeled_image, relabel_vector, [&](const ushort &label) {
+					return (area_vector[label] > 50) && (area_vector[label] < 300);
+				});
+
 				colorize_components(labeled_image, label_colors, segmented_image);
+
+				for (auto label : relabel_vector) {
+					cv::rectangle(segmented_image, bounds_vector[label], cv::Scalar(255, 0, 0), 4);
+				}
 
 				std::cout << "\tfound " << label_vector.size() << " components" << std::endl;
 

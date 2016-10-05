@@ -3,6 +3,7 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 void connected_component(const cv::Mat &binary_image, const cv::Point2i &pixel, const ushort &label, cv::Mat &labeled_image) {
 	std::stack<cv::Point2i> pixels;
@@ -59,6 +60,8 @@ void connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, u
 
 void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labeled_image, std::vector<ushort> &label_vector) {
 	ushort label = 1;
+	labeled_image = 0;
+	label_vector.clear();
 
 	std::vector<ushort> parents;
 	parents.push_back(0);
@@ -119,6 +122,27 @@ void iterative_connected_components(const cv::Mat &binary_image, cv::Mat &labele
 	}
 }
 
+void filter_labels(const cv::Mat &labeled_image, const ushort &labels, cv::Mat &relabeled_image, std::vector<ushort> &relabel_vector, Filter filter) {
+	for (int r = 0; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+		ushort *relabeled_image_ptr = relabeled_image.ptr<ushort>(r);
+
+		for (int c = 0; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			ushort &relabeled_image_pixel = relabeled_image_ptr[c];
+			relabeled_image_pixel = filter(relabeled_image_pixel) ? relabeled_image_pixel : 0;
+		}
+	}
+
+	relabel_vector.clear();
+	relabel_vector.push_back(0);
+	for (ushort l = 1; l < labels; ++l) {
+		if (filter(l)) {
+			relabel_vector.push_back(l);
+		}
+	}
+}
+
 void condense_labels(const std::vector<ushort> &label_vector, const cv::Mat &labeled_image, cv::Mat &relabeled_image) {
 	std::vector<ushort> relabel_vector;
 	relabel_vector.resize(label_vector.back() + 1);
@@ -153,51 +177,3 @@ void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec
 	}
 }
 
-void extract_component(const cv::Mat &labeled_image, const ushort &label, cv::Mat &component) {
-	for (int r = 0; r < labeled_image.rows; ++r) {
-		const ushort *components_ptr = labeled_image.ptr<ushort>(r);
-		uchar *component_ptr = component.ptr<uchar>(r);
-
-		for (int c = 0; c < labeled_image.cols; ++c) {
-			const ushort &components_pixel = components_ptr[c];
-			uchar &component_pixel = component_ptr[c];
-			
-			component_pixel = (components_pixel == label) ? 255 : 0;
-		}
-	}
-}
-
-void extract_components(const cv::Mat &labled_image, const ushort &max_label, std::vector<cv::Mat> &component_vector) {
-
-	component_vector.resize(max_label);
-
-	for (ushort label = 0; label < max_label; ++label) {
-		component_vector[label] = cv::Mat::zeros(labled_image.rows, labled_image.cols, CV_8U);
-		extract_component(labled_image, label, component_vector[label]);
-	}
-}
-
-void combine_components(const std::vector<cv::Mat> &component_vector, cv::Mat &labeled_image) {
-	for (ushort label = 1; label < component_vector.size(); ++label) {
-		const cv::Mat &component = component_vector[label];
-
-		for (int r = 0; r < component.rows; ++r) {
-			const uchar *component_ptr = component.ptr<uchar>(r);
-			ushort *labled_image_ptr = labeled_image.ptr<ushort>(r);
-
-			for (int c = 0; c < component.cols; ++c) {
-				const uchar &component_pixel = component_ptr[c];
-				ushort &labled_image_pixel = labled_image_ptr[c];
-				labled_image_pixel = (component_pixel == 255) ? label : labled_image_pixel;
-			}
-		}
-	}
-}
-
-void components_filter(std::vector<cv::Mat> &component_vector, std::function<bool(const cv::Mat&)> filter, std::vector<cv::Mat> &filtered_component_vector) {
-	for (const cv::Mat &component : component_vector) {
-		if (filter(component)) {
-			filtered_component_vector.push_back(component);
-		}
-	}
-}
