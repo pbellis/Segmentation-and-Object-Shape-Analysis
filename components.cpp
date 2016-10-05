@@ -162,7 +162,7 @@ void condense_labels(const std::vector<ushort> &label_vector, const cv::Mat &lab
 	}
 }
 
-void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image) {
+void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec3b> &color_vector, cv::Mat &segmented_image) {
 	for (int r = 0; r < labeled_image.rows; ++r) {
 		const ushort *labled_image_ptr = labeled_image.ptr<ushort>(r);
 		cv::Vec3b *segmented_image_ptr = segmented_image.ptr<cv::Vec3b>(r);
@@ -171,7 +171,7 @@ void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec
 			const ushort &labled_image_pixel = labled_image_ptr[c];
 			cv::Vec3b &segmented_image_pixel = segmented_image_ptr[c];
 			if (labled_image_pixel > 0) {
-				segmented_image_pixel = label_colors[labled_image_pixel];
+				segmented_image_pixel = color_vector[labled_image_pixel];
 			}
 		}
 	}

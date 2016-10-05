@@ -158,7 +158,9 @@ void calculate_orientations(const std::vector<int> &a_vector, const std::vector<
 	}
 }
 
-void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &circularity_vector) {
+void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &emin_vector, std::vector<float> &emax_vector,std::vector<float> &circularity_vector) {
+	emin_vector.resize(a_vector.size());
+	emax_vector.resize(a_vector.size());
 	circularity_vector.resize(a_vector.size());
 	
 	for (ushort l = 0; l < a_vector.size(); ++l) {
@@ -170,6 +172,8 @@ void calculate_circularity(const std::vector<int> &a_vector, const std::vector<i
 		const float emin = ((a + c) - (a - c) * (a - c) * h_div - b * (b * h_div));
 		const float emax = ((a + c) + (a - c) * (a - c) * h_div + b * (b * h_div));
 
+		emin_vector[l] = emin;
+		emax_vector[l] = emax;
 		circularity_vector[l] = emin / emax;
 	}
 }

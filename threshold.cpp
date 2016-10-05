@@ -1,5 +1,20 @@
 #include "threshold.h"
 
+void rgb2greyscale(const cv::Mat &src, cv::Mat &dst, const float &r_ratio, const float &g_ratio, const float &b_ratio) {
+
+	for (size_t r = 0; r < src.rows; ++r) {
+		const cv::Vec3b *src_row = src.ptr<cv::Vec3b>(r);
+		uchar *dst_row = dst.ptr<uchar>(r);
+
+		for (size_t c = 0; c < src.cols; ++c) {
+			const cv::Vec3b &src_pixel = src_row[c];
+			uchar &dst_pixel = dst_row[c];
+
+			dst_pixel = b_ratio * src_pixel[0] + g_ratio * src_pixel[1] + r_ratio * src_pixel[2];
+		}
+	}
+}
+
 //Binary threshold
 void binaryThreshold(const cv::Mat& src, cv::Mat& dst, int threshold, int method, int percentage) {
 	dst = src.clone(); //the clone methods creates a deep copy of the matrix

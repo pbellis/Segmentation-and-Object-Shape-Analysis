@@ -1,3 +1,5 @@
+#pragma once
+
 #include <opencv2/core/core.hpp>
 
 // TODO
@@ -19,4 +21,4 @@ void precalculate_orientations(const cv::Mat& labeled_image, const ushort &label
 
 void calculate_orientations(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, std::vector<float> &alpha_vector, std::vector<int> &h_vector);
 
-void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &circularity_vector);
+void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &emin_vector, std::vector<float> &emax_vector,std::vector<float> &circularity_vector);
