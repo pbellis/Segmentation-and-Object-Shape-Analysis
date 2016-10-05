@@ -1,154 +1,175 @@
 #include "object_analysis.h"
 #include <cmath>
+#include <algorithm>
 
-void object_area(const cv::Mat &src, int& area){
-	for (int r = 0; r < src.rows; ++r) {
-		const uchar *src_ptr = src.ptr<uchar>(r);
+void calculate_bounds(const cv::Mat &labeled_image, const ushort &labels, std::vector<cv::Rect2i> &bounds_vector) {
+	std::vector<cv::Point2i> minpt_vector;
+	minpt_vector.resize(labels);
+	std::fill(minpt_vector.begin() + 1, minpt_vector.end(), cv::Point2i(labeled_image.cols, labeled_image.rows));
 
-		for (int c = 0; c < src.cols; ++c) {
-			const uchar &src_pixel = src_ptr[c];
-			//printf("%d", src_pixel);
-			area += (src_pixel == 255) ? 1 : 0;
-		}
-	}
-}
+	std::vector<cv::Point2i> maxpt_vector;
+	maxpt_vector.resize(labels);
+	std::fill(maxpt_vector.begin() + 1, maxpt_vector.end(), cv::Point2i(0, 0));
 
-void object_perimeter(const cv::Mat &src, int& perimeter, const ushort lable){
-	perimeter = 0;
-	cv::Mat visited = cv::Mat::zeros(src.rows, src.cols, CV_8U);
+	for (int r = 0; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
 
-	for (int r = 0; r < src.rows; ++r) {
-		const ushort *src_ptr = src.ptr<ushort>(r);
-		uchar *visited_ptr = visited.ptr<uchar>(r);
-		int b_neighbor_counter = 0;
-		for (int c = 0; c < src.cols; ++c) {
-			const ushort &src_pixel = src_ptr[c];
-			uchar &visited_pixel = visited_ptr[c];
+		for (int c = 0; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			if (labeled_image_pixel) {
+				minpt_vector[labeled_image_pixel].x = (c < minpt_vector[labeled_image_pixel].x) ? c : minpt_vector[labeled_image_pixel].x;
+				minpt_vector[labeled_image_pixel].y = (r < minpt_vector[labeled_image_pixel].y) ? r : minpt_vector[labeled_image_pixel].y;
 
-			if (visited_pixel == 0 && src_pixel == lable) {
-				const ushort *src_ptr_up = src.ptr<ushort>(r - 1);
-				const ushort *src_ptr_down = src.ptr<ushort>(r + 1);
-				if (src_ptr_up[c - 1] == 0 || src_ptr_up[c] == 0 || src_ptr_up[c + 1] == 0 ||
-					src_ptr[c - 1] == 0 || src_ptr[c + 1] == 0 ||
-					src_ptr_down[c - 1] == 0 || src_ptr_down[c] == 0 || src_ptr_down[c + 1] == 0){
-					perimeter++;
-				}
-				visited_pixel = 1;
-			}
-		}
-	}
-}
-
-void object_bounds(const cv::Mat &src, cv::Rect2i &bounds) {
-
-	cv::Point2i min_pt, max_pt;
-
-	// FIND MINIMUM COLUMN
-	for (int c = 0; c < src.cols; ++c) {
-		for (int r = 0; r < src.rows; ++r) {
-			if (src.at<uchar>(r,c) == 255) {
-				min_pt.x = c;
+				maxpt_vector[labeled_image_pixel].x = (c > maxpt_vector[labeled_image_pixel].x) ? c : maxpt_vector[labeled_image_pixel].x;
+				maxpt_vector[labeled_image_pixel].y = (r > maxpt_vector[labeled_image_pixel].y) ? r : maxpt_vector[labeled_image_pixel].y;
 			}
 		}
 	}
 
-	// FIND MINIMUM ROW
-	for (int r = 0; r < src.rows; ++r) {
-		const uchar *src_ptr = src.ptr<uchar>(r);
-		for (int c = 0; c < src.cols; ++c) {
-			const uchar &src_pixel = src_ptr[c];
+	bounds_vector.resize(labels);
+	bounds_vector[0].x = 1;
+	bounds_vector[0].y = 1;
+	bounds_vector[0].width = labeled_image.cols - 2;
+	bounds_vector[0].height = labeled_image.rows - 2;
 
-			if (src_pixel == 255) {
-				min_pt.y = r;
-				break;
+	for (ushort l = 1; l < labels; ++l) {
+		bounds_vector[l].x = minpt_vector[l].x;
+		bounds_vector[l].y = minpt_vector[l].y;
+		bounds_vector[l].width = maxpt_vector[l].x - minpt_vector[l].x;
+		bounds_vector[l].height = maxpt_vector[l].y - minpt_vector[l].y;
+	}
+}
+
+void calcualte_areas(const cv::Mat &labeled_image, const ushort &labels, std::vector<int> &area_vector) {
+	area_vector.resize(labels);
+	std::fill(area_vector.begin(), area_vector.end(), 0);
+
+	for (int r = 0; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+
+		for (int c = 0; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			area_vector[labeled_image_pixel]++;
+		}
+	}
+}
+
+void calculate_perimeters(const cv::Mat &labeled_image, const ushort &labels, std::vector<int> &perimeter_vector){
+	perimeter_vector.resize(labels);
+	std::fill(perimeter_vector.begin(), perimeter_vector.end(), 0);
+
+	for (int r = 1; r < labeled_image.rows - 1; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+		const ushort *labeled_image_north_ptr = labeled_image.ptr<ushort>(r + 1);
+		const ushort *labeled_image_south_ptr = labeled_image.ptr<ushort>(r - 1);
+
+		for (int c = 1; c < labeled_image.cols - 1; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			const ushort &labeled_image_north_pixel = labeled_image_north_ptr[c];
+			const ushort &labeled_image_east_pixel = labeled_image_ptr[c + 1];
+			const ushort &labeled_image_south_pixel = labeled_image_south_ptr[c];
+			const ushort &labeled_image_west_pixel = labeled_image_ptr[c - 1];
+
+			if ((labeled_image_north_pixel != labeled_image_pixel) ||
+				(labeled_image_east_pixel != labeled_image_pixel) ||
+				(labeled_image_south_pixel != labeled_image_pixel) ||
+				(labeled_image_west_pixel != labeled_image_pixel)) {
+				perimeter_vector[labeled_image_pixel];
 			}
 
 		}
 	}
+}
 
-	// FIND MAXIMUM COLUMN
-	for (int c = src.cols - 1; c >= 0; --c) {
-		for (int r = 0; r < src.rows; ++r) {
-			if (src.at<uchar>(r,c) == 255) {
-				max_pt.x = c;
-			}
+void calculate_area_perimeter_ratios(const std::vector<int> &area_vector, const std::vector<int> &perimeter_vector, std::vector<float> &ratio_vector) {
+	ratio_vector.reserve(area_vector.size());
+	for (ushort l = 0; l < area_vector.size(); ++l) {
+		ratio_vector[l] = static_cast<float>(area_vector[l]) / static_cast<float>(perimeter_vector[l]);
+	}
+}
+
+void calculate_compactness(const std::vector<int> &area_vector, const std::vector<int> &perimeter_vector, std::vector<float> &compactness_vector) {
+	compactness_vector.reserve(area_vector.size());
+	for (ushort l = 0; l < area_vector.size(); ++l) {
+		compactness_vector[l] = static_cast<float>(perimeter_vector[l] * perimeter_vector[l]) / static_cast<float>(area_vector[l]);
+	}
+}
+
+void calculate_centroids(const cv::Mat& labeled_image, const ushort &labels, std::vector<cv::Point2i> centroid_vector) {
+	
+	centroid_vector.resize(labels);
+	std::fill(centroid_vector.begin(), centroid_vector.end(), cv::Point2i(0, 0));
+
+	std::vector<int> total_vector;
+	total_vector.resize(labels);
+	std::fill(total_vector.begin(), total_vector.end(), 0);
+
+	for (int r = 0; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+
+		for (int c = 0; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			centroid_vector[labeled_image_pixel].x += c;
+			centroid_vector[labeled_image_pixel].y += r;
+			total_vector[labeled_image_pixel] ++;
+
 		}
 	}
 
-	// FIND MAXIMUM ROW
-	for (int r = src.rows - 1; r >= 0; --r) {
-		const uchar *src_ptr = src.ptr<uchar>(r);
-		for (int c = 0; c < src.cols; ++c) {
-			const uchar &src_pixel = src_ptr[c];
+	for (ushort l = 0; l < labels; ++l) {
+		centroid_vector[l].x /= total_vector[l];
+		centroid_vector[l].y /= total_vector[l];
+	}
+}
 
-			if (src_pixel == 255) {
-				max_pt.y = r;
-				break;
-			}
+void precalculate_orientations(const cv::Mat& labeled_image, const ushort &labels, const std::vector<cv::Point2i> centroid_vector, std::vector<int> &a_vector, std::vector<int> &b_vector, std::vector<int> &c_vector) {
+	a_vector.resize(labels);
+	std::fill(a_vector.begin(), a_vector.end(), 0);
 
+	b_vector.resize(labels);
+	std::fill(b_vector.begin(), b_vector.end(), 0);
+
+	c_vector.resize(labels);
+	std::fill(c_vector.begin(), c_vector.end(), 0);
+	
+	for (int r = 0; r < labeled_image.rows; ++r) {
+		const ushort *labeled_image_ptr = labeled_image.ptr<ushort>(r);
+
+		for (int c = 0; c < labeled_image.cols; ++c) {
+			const ushort &labeled_image_pixel = labeled_image_ptr[c];
+			const int transformed_c = c - centroid_vector[labeled_image_pixel].x;
+			const int transformed_r = r - centroid_vector[labeled_image_pixel].y;
+
+			a_vector[labeled_image_pixel] += (transformed_c * transformed_c);
+			b_vector[labeled_image_pixel] += (2 * transformed_c * transformed_r);
+			c_vector[labeled_image_pixel] += (transformed_r * transformed_r);
 		}
 	}
-
-	bounds.x = min_pt.x;
-	bounds.y = min_pt.y;
-	bounds.width = max_pt.x - max_pt.x;
-	bounds.height = max_pt.y - max_pt.y;
-
 }
 
-
-
-void calculate_orientation(const int &a, const int &b, const int &c, float& alpha, int& h){
-	h = sqrt((a - c)*(a - c) + b*b);
-	alpha = atanf(b / (a - c))/2.0f;
-}
-
-//calculate the centroid coordinates the object with given label
-void calculate_centroid(cv::Mat& src, ushort lable, cv::Rect2i &bounds, int &xbar, int &ybar){
-	int xsum = 0,
-		ysum = 0,
-		number = 0;
-	for (int i = bounds.y; i < bounds.y + bounds.height; i++){
-		for (int j = bounds.x; j < bounds.x + bounds.width; j++){
-			if (src.at<ushort>(j, i) == lable);
-			xsum = xsum + j;
-			ysum = ysum + i;
-			number++;
-		}
+void calculate_orientations(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, std::vector<float> &alpha_vector, std::vector<int> &h_vector){
+	h_vector.resize(a_vector.size());
+	alpha_vector.resize(a_vector.size());
+	
+	for (ushort l = 0; l < a_vector.size(); ++l) {
+		const int a_minus_c = a_vector[l] - c_vector[l];
+		h_vector[l] = sqrt(a_minus_c * a_minus_c + b_vector[l] * b_vector[l]);
+		alpha_vector[l] = atan(static_cast<float>(b_vector[l]) / static_cast<float>(a_minus_c)) / 2.0f;
 	}
-	xbar = xsum / number;
-	ybar = ysum / number;
 }
 
-void calculate_circularity(const int &a, const int &b, const int &c, const int &h, float &emin, float &emax, float &circularity) {
-	const float h_div = static_cast<float>(h);
-	emin = 0.5f * ((a + c) - (a - c) * (a - c) * h_div - b * (b * h_div));
-	emax = 0.5f * ((a + c) + (a - c) * (a - c) * h_div + b * (b * h_div));
-	circularity = emin / emax;
-}
+void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &circularity_vector) {
+	circularity_vector.resize(a_vector.size());
+	
+	for (ushort l = 0; l < a_vector.size(); ++l) {
+		const float h_div = static_cast<float>(h_vector[l]);
+		const int a = a_vector[l];
+		const int b = b_vector[l];
+		const int c = c_vector[l];
 
-void ratioAreaToPerimeter(int& area, int& perimeter, float& ratio) {
-	ratio = static_cast<float>(area) / static_cast<float>(perimeter);
-}
+		const float emin = ((a + c) - (a - c) * (a - c) * h_div - b * (b * h_div));
+		const float emax = ((a + c) + (a - c) * (a - c) * h_div + b * (b * h_div));
 
-void compactness(int& area, int& perimeter, float& compact) {
-	compact = (perimeter*perimeter) / static_cast<float>(area);
-}
-
-//src, label as ushort, and bounding box of object
-void preOrientation(const cv::Mat& src, const ushort& label, const cv::Rect2i& bounds, const cv::Point2i centroid, int& a, int& b, int& c) {
-
-	for (int i = bounds.y; i < bounds.y + bounds.height; i++) {
-		const ushort *src_image_ptr = src.ptr<ushort>(i);
-
-		for (int j = bounds.x; j < bounds.y + bounds.width; j++) {
-			const ushort &src_image_pixel = src_image_ptr[j];
-			const int Bij = (src_image_pixel == label) ? 1 : 0;
-			a += Bij * (j - centroid.x) * (j - centroid.x);
-			b += Bij * 2 * (j - centroid.x) * (i - centroid.y);
-			c += Bij * (i - centroid.y) * (i - centroid.y);
-		}
+		circularity_vector[l] = emin / emax;
 	}
-
-
 }
