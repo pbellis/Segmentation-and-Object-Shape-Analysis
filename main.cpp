@@ -69,6 +69,21 @@ int main(int argc, char** argv) {
 		}
 	});
 
+	switch (mode) {
+	case AquariumData:
+		// aquarium proccessing loop
+		break;
+	case BatData:
+		// bat processing loop
+		break;
+	case CellData:
+		// cell data processing loop
+		break;
+	default:
+		exit(1);
+		break;
+	}
+
 	cv::Size2i size = src_images[0].size();
 	cv::Mat grey_image(size, CV_8UC1);
 
@@ -88,7 +103,6 @@ int main(int argc, char** argv) {
 		for (int f = 0; f < src_images.size(); ++f) {
 
 			const cv::Mat &src = src_images[f];
-			const cv::Mat &previous_src = src_images[f - 1];
 
 			std::cout << "frame start" << std::endl;
 
@@ -96,8 +110,8 @@ int main(int argc, char** argv) {
 
 				rgb2greyscale(src, grey_image);
 
-				binaryThreshold(src, binary_image, 125, 1, 75);
-				//adaptiveThreshold(src, binary_image);
+				//binaryThreshold(src, binary_image, 125, 1, 75);
+				adaptiveThreshold(src, binary_image);
 
 				dilation(binary_image, binary_image, 2, cv::MORPH_ELLIPSE);
 
@@ -112,17 +126,18 @@ int main(int argc, char** argv) {
 				calcualte_areas(labeled_image, labels, area_vector);
 
 				filter_labels(labeled_image, labels, labeled_image, relabel_vector, [&](const ushort &label) {
-					return (area_vector[label] > 50) && (area_vector[label] < 300);
+					return (area_vector[label] > 50) && (area_vector[label] < 500);
 				});
 
 				colorize_components(labeled_image, label_colors, segmented_image);
 
 				for (auto label : relabel_vector) {
-					cv::rectangle(segmented_image, bounds_vector[label], cv::Scalar(255, 0, 0), 4);
+					cv::rectangle(segmented_image, bounds_vector[label], cv::Scalar(255, 0, 0), 1);
 				}
 
-				std::cout << "\tfound " << label_vector.size() << " components" << std::endl;
+				std::cout << "\tfound " << relabel_vector.size() << " components" << std::endl;
 
+				cv::imshow("source", src);
 				cv::imshow("segmented", segmented_image);
 
 				cv::waitKey(1);
@@ -137,6 +152,8 @@ int main(int argc, char** argv) {
 
 void rgb2greyscale(const cv::Mat &src, cv::Mat &dst) {
 
+	static const float div = 1.0f / 3.0f;
+
 	for (size_t r = 0; r < src.rows; ++r) {
 		const cv::Vec3b *src_row = src.ptr<cv::Vec3b>(r);
 		uchar *dst_row = dst.ptr<uchar>(r);
@@ -145,7 +162,7 @@ void rgb2greyscale(const cv::Mat &src, cv::Mat &dst) {
 			const cv::Vec3b &src_pixel = src_row[c];
 			uchar &dst_pixel = dst_row[c];
 
-			dst_pixel = (src_pixel[0] >> 2) + (src_pixel[1] >> 1) + (src_pixel[2] >> 3);
+			dst_pixel = div * src_pixel[0] + div * src_pixel[1] + div * src_pixel[2];
 		}
 	}
 }
