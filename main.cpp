@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 			if (DataSets[i].compare(data_set) == 0) {
 				cv::glob(directory, file_vector);
 				source_vector.resize(file_vector.size());
-				std::transform(file_vector.begin(), file_vector.end(), source_vector.begin(), [](cv::String &file_name) {return cv::imread(file_name, CV_8UC3); });
+				std::transform(file_vector.begin(), file_vector.end(), source_vector.begin(), [](cv::String &file_name) {return cv::imread(file_name, cv::IMREAD_COLOR); });
 				mode = i;
 				break;
 			}

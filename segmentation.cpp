@@ -14,10 +14,10 @@
 
 void bat::segmentation(const std::vector<cv::Mat> &source_vector, const std::vector<cv::Vec3b> &color_vector) {
 	cv::Size2i size = source_vector[0].size();
-	cv::Mat grey_image(size, CV_8UC1);
+	cv::Mat grey_image(size, CV_8U);
 
-	cv::Mat binary_image(size, CV_8UC1);
-	cv::Mat labeled_image(size, CV_16UC1);
+	cv::Mat binary_image(size, CV_8U);
+	cv::Mat labeled_image(size, CV_16U);
 	cv::Mat segmented_image(size, CV_8UC3);
 
 	std::vector<ushort> label_vector;
@@ -44,7 +44,7 @@ void bat::segmentation(const std::vector<cv::Mat> &source_vector, const std::vec
 				rgb2greyscale(source_image, grey_image, r_ratio, g_ratio, b_ratio);
 
 				//binaryThreshold(src, binary_image, 125, 1, 75);
-				adaptiveThreshold(source_image, binary_image);
+				adaptiveThreshold(grey_image, binary_image);
 
 				dilation(binary_image, binary_image, 2, cv::MORPH_ELLIPSE);
 
@@ -70,7 +70,6 @@ void bat::segmentation(const std::vector<cv::Mat> &source_vector, const std::vec
 
 				std::cout << "\tfound " << relabel_vector.size() << " components" << std::endl;
 
-				cv::imshow("source", source_image);
 				cv::imshow("segmented", segmented_image);
 
 				cv::waitKey(1);
@@ -111,11 +110,16 @@ void cell::segmentation(const std::vector<cv::Mat> &source_vector, const std::ve
 			std::cout << "frame start" << std::endl;
 
 			auto frame_length = timeit([&]() {
-
 				rgb2greyscale(source_image, grey_image, r_ratio, g_ratio, b_ratio);
 
-				//binaryThreshold(src, binary_image, 125, 1, 75);
-				adaptiveThreshold(source_image, binary_image);
+				cv::resize(grey_image, grey_image, size / 3);
+				cv::resize(binary_image, binary_image, size / 3);
+
+				//binaryThreshold(grey_image, binary_image, 125, 1, 75);
+				adaptiveThreshold(grey_image, binary_image);
+
+				cv::resize(grey_image, grey_image, size);
+				cv::resize(binary_image, binary_image, size);
 
 				dilation(binary_image, binary_image, 2, cv::MORPH_ELLIPSE);
 
@@ -130,7 +134,7 @@ void cell::segmentation(const std::vector<cv::Mat> &source_vector, const std::ve
 				calcualte_areas(labeled_image, labels, area_vector);
 
 				filter_labels(labeled_image, labels, labeled_image, relabel_vector, [&](const ushort &label) {
-					return (area_vector[label] > 250) && (area_vector[label] < 10000);
+					return (area_vector[label] > 250);
 				});
 
 				colorize_components(labeled_image, color_vector, segmented_image);
@@ -141,7 +145,6 @@ void cell::segmentation(const std::vector<cv::Mat> &source_vector, const std::ve
 
 				std::cout << "\tfound " << relabel_vector.size() << " components" << std::endl;
 
-				cv::imshow("source", source_image);
 				cv::imshow("segmented", segmented_image);
 
 				cv::waitKey(1);
@@ -187,16 +190,22 @@ void aquarium::segmentation(const std::vector<cv::Mat> &source_vector, const std
 
 		for (int f = 0; f < source_vector.size(); ++f) {
 
-			const cv::Mat &source = source_vector[f];
+			const cv::Mat &source_image = source_vector[f];
 
 			std::cout << "frame start" << std::endl;
 
 			auto frame_length = timeit([&]() {
 
-				rgb2greyscale(source, grey_image, r_ratio, g_ratio, b_ratio);
+				rgb2greyscale(source_image, grey_image, r_ratio, g_ratio, b_ratio);
+
+				cv::resize(grey_image, grey_image, size / 3);
+				cv::resize(binary_image, binary_image, size / 3);
 
 				//binaryThreshold(src, binary_image, 125, 1, 75);
 				adaptiveThreshold(grey_image, binary_image);
+
+				cv::resize(grey_image, grey_image, size);
+				cv::resize(binary_image, binary_image, size);
 
 				dilation(binary_image, binary_image, 2, cv::MORPH_ELLIPSE);
 
@@ -220,6 +229,8 @@ void aquarium::segmentation(const std::vector<cv::Mat> &source_vector, const std
 				colorize_components(labeled_image, color_vector, segmented_image);
 
 				for (auto label : relabel_vector) {
+					if (label == 0) continue;
+
 					if (emin_vector[label] < emax_vector[label]) {
 						cv::ellipse(segmented_image, centroid_vector[label], cv::Size(5 * (1.0f + circularity_vector[label]), 10), 57.2958 * alpha_vector[label], 0, 360, cv::Scalar(0, 255, 0), 2);
 					}
