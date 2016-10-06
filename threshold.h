@@ -1,5 +1,9 @@
+#pragma once
+
 #include <opencv2/core/core.hpp>
 
+
+void rgb2greyscale(const cv::Mat &src, cv::Mat &dst, const float &r_ratio, const float &g_ratio, const float &b_ratio);
 
 /*Global (Binary) Threshold
 Creates a thresholded image from a grayscale image.

@@ -95,7 +95,7 @@ void calculate_compactness(const std::vector<int> &area_vector, const std::vecto
 	}
 }
 
-void calculate_centroids(const cv::Mat& labeled_image, const ushort &labels, std::vector<cv::Point2i> centroid_vector) {
+void calculate_centroids(const cv::Mat& labeled_image, const ushort &labels, std::vector<cv::Point2i> &centroid_vector) {
 	
 	centroid_vector.resize(labels);
 	std::fill(centroid_vector.begin(), centroid_vector.end(), cv::Point2i(0, 0));
@@ -122,7 +122,7 @@ void calculate_centroids(const cv::Mat& labeled_image, const ushort &labels, std
 	}
 }
 
-void precalculate_orientations(const cv::Mat& labeled_image, const ushort &labels, const std::vector<cv::Point2i> centroid_vector, std::vector<int> &a_vector, std::vector<int> &b_vector, std::vector<int> &c_vector) {
+void precalculate_orientations(const cv::Mat& labeled_image, const ushort &labels, const std::vector<cv::Point2i> &centroid_vector, std::vector<int> &a_vector, std::vector<int> &b_vector, std::vector<int> &c_vector) {
 	a_vector.resize(labels);
 	std::fill(a_vector.begin(), a_vector.end(), 0);
 
@@ -152,17 +152,20 @@ void calculate_orientations(const std::vector<int> &a_vector, const std::vector<
 	alpha_vector.resize(a_vector.size());
 	
 	for (ushort l = 0; l < a_vector.size(); ++l) {
-		const int a_minus_c = a_vector[l] - c_vector[l];
-		h_vector[l] = sqrt(a_minus_c * a_minus_c + b_vector[l] * b_vector[l]);
+		const long long a_minus_c = a_vector[l] - c_vector[l];
+		const long long b_mul_b = b_vector[l] * b_vector[l];
+		h_vector[l] = sqrt((a_minus_c * a_minus_c) + b_mul_b);
 		alpha_vector[l] = atan(static_cast<float>(b_vector[l]) / static_cast<float>(a_minus_c)) / 2.0f;
 	}
 }
 
-void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &circularity_vector) {
+void calculate_circularity(const std::vector<int> &a_vector, const std::vector<int> &b_vector, const std::vector<int> &c_vector, const std::vector<int> &h_vector, std::vector<float> &emin_vector, std::vector<float> &emax_vector,std::vector<float> &circularity_vector) {
+	emin_vector.resize(a_vector.size());
+	emax_vector.resize(a_vector.size());
 	circularity_vector.resize(a_vector.size());
 	
 	for (ushort l = 0; l < a_vector.size(); ++l) {
-		const float h_div = static_cast<float>(h_vector[l]);
+		const float h_div = 1.0f / static_cast<float>(h_vector[l]);
 		const int a = a_vector[l];
 		const int b = b_vector[l];
 		const int c = c_vector[l];
@@ -170,6 +173,8 @@ void calculate_circularity(const std::vector<int> &a_vector, const std::vector<i
 		const float emin = ((a + c) - (a - c) * (a - c) * h_div - b * (b * h_div));
 		const float emax = ((a + c) + (a - c) * (a - c) * h_div + b * (b * h_div));
 
+		emin_vector[l] = emin / 2.0f;
+		emax_vector[l] = emax / 2.0f;
 		circularity_vector[l] = emin / emax;
 	}
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <opencv2/core/core.hpp>
 #include <functional>
 
@@ -52,5 +54,5 @@ Index based coloring of an image based off the lable at each pixel. Background p
 @param label_colors: A vector of rgb colors
 @out segmented_image: An image with cv::Vec3b as pixel type
 */
-void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec3b> &label_colors, cv::Mat &segmented_image);
+void colorize_components(const cv::Mat &labeled_image, const std::vector<cv::Vec3b> &color_vector, cv::Mat &segmented_image);
 
